@@ -15,6 +15,7 @@
  */
 
 use assert_cmd::prelude::*;
+use indoc::indoc;
 use predicates::prelude::*;
 use std::io::Write;
 use std::process::Command;
@@ -74,6 +75,48 @@ mod no_conversion {
         }
 
         #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ \ \ ♥♥♥\ 36\ and\ ٣\ and\ y̆y̆\ and\ 💩💩\.
+                $
+                "#,
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--escape", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ \ \ \u{2665}\u{2665}\u{2665}\ 36\ and\ \u{663}\ and\ y\u{306}y\u{306}\ and\ \u{1f4a9}\u{1f4a9}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--escape", "--with-surrogates", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ \ \ \u{2665}\u{2665}\u{2665}\ 36\ and\ \u{663}\ and\ y\u{306}y\u{306}\ and\ \u{d83d}\u{dca9}\u{d83d}\u{dca9}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
         #[allow(unused_must_use)]
         fn succeeds_with_file_input() {
             let mut file = NamedTempFile::new().unwrap();
@@ -127,8 +170,7 @@ mod no_conversion {
         #[test]
         fn fails_with_both_direct_and_file_input() {
             let mut grex = init_command();
-            grex.args(&[TEST_CASE]);
-            grex.args(&["-f", "/path/to/some/file"]);
+            grex.args(&[TEST_CASE, "-f", "/path/to/some/file"]);
             grex.assert().failure().stderr(predicate::str::contains(
                 "argument '--file <FILE>' cannot be used with 'input'",
             ));
@@ -172,6 +214,70 @@ mod no_conversion {
             grex.assert().success().stdout(predicate::eq(
                 "^I {3}\\u{2665}{3} 36 and \\u{663} and (?:y\\u{306}){2} and (?:\\u{d83d}\\u{dca9}){2}\\.$\n",
             ));
+        }
+
+        #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--repetitions", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ {3}♥{3}\ 36\ and\ ٣\ and\ 
+                (?:
+                  y̆
+                ){2}
+                \ and\ 💩{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--repetitions", "--escape", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ {3}\u{2665}{3}\ 36\ and\ \u{663}\ and\ 
+                (?:
+                  y\u{306}
+                ){2}
+                \ and\ \u{1f4a9}{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ {3}\u{2665}{3}\ 36\ and\ \u{663}\ and\ 
+                (?:
+                  y\u{306}
+                ){2}
+                \ and\ 
+                (?:
+                  \u{d83d}\u{dca9}
+                ){2}
+                \.
+                $
+                "#
+            )));
         }
 
         #[test]
@@ -264,6 +370,54 @@ mod digit_conversion {
         }
 
         #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--digits", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ \ \ ♥♥♥\ \d\d\ and\ \d\ and\ y̆y̆\ and\ 💩💩\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--digits", "--escape", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ \ \ \u{2665}\u{2665}\u{2665}\ \d\d\ and\ \d\ and\ y\u{306}y\u{306}\ and\ \u{1f4a9}\u{1f4a9}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--digits",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ \ \ \u{2665}\u{2665}\u{2665}\ \d\d\ and\ \d\ and\ y\u{306}y\u{306}\ and\ \u{d83d}\u{dca9}\u{d83d}\u{dca9}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
         fn succeeds_with_capturing_groups_option() {
             let mut grex = init_command();
             grex.args(&["--capture-groups", "abc", "def"]);
@@ -307,6 +461,86 @@ mod digit_conversion {
             grex.assert().success().stdout(predicate::eq(
                 "^I {3}\\u{2665}{3} \\d(?:\\d and ){2}(?:y\\u{306}){2} and (?:\\u{d83d}\\u{dca9}){2}\\.$\n",
             ));
+        }
+
+        #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--repetitions", "--digits", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ {3}♥{3}\ \d
+                (?:
+                  \d\ and\ 
+                ){2}
+                (?:
+                  y̆
+                ){2}
+                \ and\ 💩{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--digits",
+                "--escape",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ {3}\u{2665}{3}\ \d
+                (?:
+                  \d\ and\ 
+                ){2}
+                (?:
+                  y\u{306}
+                ){2}
+                \ and\ \u{1f4a9}{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--digits",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\ {3}\u{2665}{3}\ \d
+                (?:
+                  \d\ and\ 
+                ){2}
+                (?:
+                  y\u{306}
+                ){2}
+                \ and\ 
+                (?:
+                  \u{d83d}\u{dca9}
+                ){2}
+                \.
+                $
+                "#
+            )));
         }
 
         #[test]
@@ -373,6 +607,54 @@ mod space_conversion {
                 "^I\\s\\s\\s\\u{2665}\\u{2665}\\u{2665}\\s36\\sand\\s\\u{663}\\sand\\sy\\u{306}y\\u{306}\\sand\\s\\u{d83d}\\u{dca9}\\u{d83d}\\u{dca9}\\.$\n"
             ));
         }
+
+        #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--spaces", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\s\s\s♥♥♥\s36\sand\s٣\sand\sy̆y̆\sand\s💩💩\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--spaces", "--escape", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\s\s\s\u{2665}\u{2665}\u{2665}\s36\sand\s\u{663}\sand\sy\u{306}y\u{306}\sand\s\u{1f4a9}\u{1f4a9}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--spaces",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\s\s\s\u{2665}\u{2665}\u{2665}\s36\sand\s\u{663}\sand\sy\u{306}y\u{306}\sand\s\u{d83d}\u{dca9}\u{d83d}\u{dca9}\.
+                $
+                "#
+            )));
+        }
     }
 
     mod repetition {
@@ -410,6 +692,77 @@ mod space_conversion {
                 "^I\\s{3}\\u{2665}{3}\\s36\\sand\\s\\u{663}\\sand\\s(?:y\\u{306}){2}\\sand\\s(?:\\u{d83d}\\u{dca9}){2}\\.$\n",
             ));
         }
+
+        #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--repetitions", "--spaces", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\s{3}♥{3}\s36\sand\s٣\sand\s
+                (?:
+                  y̆
+                ){2}
+                \sand\s💩{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--spaces",
+                "--escape",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\s{3}\u{2665}{3}\s36\sand\s\u{663}\sand\s
+                (?:
+                  y\u{306}
+                ){2}
+                \sand\s\u{1f4a9}{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--spaces",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                I\s{3}\u{2665}{3}\s36\sand\s\u{663}\sand\s
+                (?:
+                  y\u{306}
+                ){2}
+                \sand\s
+                (?:
+                  \u{d83d}\u{dca9}
+                ){2}
+                \.
+                $
+                "#
+            )));
+        }
     }
 }
 
@@ -444,6 +797,54 @@ mod word_conversion {
             grex.assert().success().stdout(predicate::eq(
                 "^\\w   \\u{2665}\\u{2665}\\u{2665} \\w\\w \\w\\w\\w \\w \\w\\w\\w \\w\\w\\w\\w \\w\\w\\w \\u{d83d}\\u{dca9}\\u{d83d}\\u{dca9}\\.$\n"
             ));
+        }
+
+        #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--words", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                \w\ \ \ ♥♥♥\ \w\w\ \w\w\w\ \w\ \w\w\w\ \w\w\w\w\ \w\w\w\ 💩💩\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--words", "--escape", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                \w\ \ \ \u{2665}\u{2665}\u{2665}\ \w\w\ \w\w\w\ \w\ \w\w\w\ \w\w\w\w\ \w\w\w\ \u{1f4a9}\u{1f4a9}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--words",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                \w\ \ \ \u{2665}\u{2665}\u{2665}\ \w\w\ \w\w\w\ \w\ \w\w\w\ \w\w\w\w\ \w\w\w\ \u{d83d}\u{dca9}\u{d83d}\u{dca9}\.
+                $
+                "#
+            )));
         }
     }
 
@@ -481,6 +882,65 @@ mod word_conversion {
             grex.assert().success().stdout(predicate::eq(
                 "^\\w {3}\\u{2665}{3} \\w{2} \\w{3} \\w \\w{3} \\w{4} \\w{3} (?:\\u{d83d}\\u{dca9}){2}\\.$\n",
             ));
+        }
+
+        #[test]
+        fn succeeds_with_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&["--repetitions", "--words", "--verbose", TEST_CASE]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                \w\ {3}♥{3}\ \w{2}\ \w{3}\ \w\ \w{3}\ \w{4}\ \w{3}\ 💩{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--words",
+                "--escape",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                \w\ {3}\u{2665}{3}\ \w{2}\ \w{3}\ \w\ \w{3}\ \w{4}\ \w{3}\ \u{1f4a9}{2}\.
+                $
+                "#
+            )));
+        }
+
+        #[test]
+        fn succeeds_with_escape_and_surrogate_and_verbose_mode_option() {
+            let mut grex = init_command();
+            grex.args(&[
+                "--repetitions",
+                "--words",
+                "--escape",
+                "--with-surrogates",
+                "--verbose",
+                TEST_CASE,
+            ]);
+            grex.assert().success().stdout(predicate::eq(indoc!(
+                r#"
+                (?x)
+                ^
+                \w\ {3}\u{2665}{3}\ \w{2}\ \w{3}\ \w\ \w{3}\ \w{4}\ \w{3}\ 
+                (?:
+                  \u{d83d}\u{dca9}
+                ){2}
+                \.
+                $
+                "#
+            )));
         }
     }
 }
